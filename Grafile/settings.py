@@ -40,8 +40,14 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'fileManager',
+    # REST
     'rest_framework',
+    'rest_framework.authtoken',
+    # GRAFILE
+    'apps.accounts.apps.AccountsConfig',
+    'apps.files.apps.FilesConfig',
+    'apps.sharing.apps.SharingConfig',
+    'apps.auditing.apps.AuditingConfig',
 ]
 
 MIDDLEWARE = [

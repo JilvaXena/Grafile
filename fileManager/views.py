@@ -1,6 +1,6 @@
 from os import getenv
 from django.shortcuts import render
-from django.http import JsonResponse
+from django.http import HttpResponse
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.conf import settings
 from rest_framework.decorators import api_view, permission_classes
@@ -18,3 +18,4 @@ def server_info(request):
         "version": getenv("SERVER_VERSION")
     }
     return Response(data)
+

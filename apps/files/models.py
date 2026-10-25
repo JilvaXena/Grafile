@@ -21,8 +21,9 @@ class Group(models.Model):
 
 class File(models.Model):
     file_id = models.UUIDField(primary_key=True, default=uuid.uuid4, unique=True, editable=False)
+    file_name = models.TextField(max_length=100)
 
-    file_name = models.TextField(null=False, editable=True)
+    file_algorithm = models.TextField(null=True)
 
     group = models.ForeignKey(Group, null=True, editable=True, on_delete=models.SET_NULL)
 
@@ -32,9 +33,10 @@ class File(models.Model):
         null=True,
         editable=False
     )
+    
     date_created = models.DateTimeField(null=False, editable=False, auto_now_add=True)
 
-    path = models.TextField(editable=True, null=False)
+    file = models.FileField(upload_to="vault/")
 
     def __str__(self):
         return self.path

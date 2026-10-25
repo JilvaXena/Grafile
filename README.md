@@ -1,0 +1,1 @@
+This is/may be a terrible file sharing server, (possibly) paired with an android app to share encrypted files between devices in the local network. It will/may support user logins, groups of users and files, and also a crude version control history based on hashes (and possibly an archive of old files). 

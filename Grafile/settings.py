@@ -152,3 +152,7 @@ SERVER_CONFIG = {
     "environment": os.getenv("SERVER_ENV", "development"),
     "server_version": os.getenv("SERVER_VERSION", "x.x.1"),
 }
+
+#TODO: change to secure location
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'

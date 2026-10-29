@@ -1,6 +1,6 @@
 from django.shortcuts import render
-from django.http import JsonResponse, FileResponse
-from django.views.decorators.http import require_http_methods, APIView
+from django.http import FileResponse
+from django.views.decorators.http import APIView
 from rest_framework import viewsets, status
 from rest_framweork.response import Response
 from rest_framework.permissions import IsAuthenticated

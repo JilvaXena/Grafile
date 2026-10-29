@@ -1,6 +1,6 @@
 from django.shortcuts import render
-from django.http import JsonResponse
-from django.views.decorators.http import require_http_methods
+from django.http import JsonResponse, FileResponse
+from django.views.decorators.http import require_http_methods, APIView
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
 
@@ -9,35 +9,36 @@ from models import File, Group
 from .serializers import FileSerializer
 from .errors import ErrorCode
 
-@require_http_methods(["GET"])
-def search_file(request):
-    file_id = request.GET.get('file_id')
-    file_name = request.GET.get('file_name')
 
-    if file_id:
-        files_queryset = File.objects.filter(file_id=file_id).all()
-    elif file_name:
-        files_queryset = File.objects.filter(file_name__icontains=file_name).all()
-    else:
-        return JsonResponse({"error": "Either file id or file name needed to perform the search"}, status=400)
+class FileAPI(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(request):
+        file_id = request.data.get('file_id')
+        file_name = request.data.get('file_name')
+
+        if file_id:
+            files_queryset = File.objects.filter(file_id=file_id).all()
+        elif file_name:
+            files_queryset = File.objects.filter(file_name__icontains=file_name).all()
+        else:
+            return JsonResponse({"error": "Either file id or file name needed to perform the search"}, status=400)
     
-    results = list(files_queryset.values('file_id', 'file_name', 'group'))
-    return JsonResponse({"results": results}, safe=False)
+        results = list(files_queryset.values('file_id', 'file_name', 'group'))
+        return JsonResponse({"results": results}, safe=False)
 
-@require_http_methods(["POST", "PUT"])
-def file_api(request):
-    """Handling of updating and adding new files."""
-    if request.method == "POST":
+    def post(request):
+        """Handling of updating and adding new files."""
+        #TODO: Check http error codes
         # New File
-        file_name = request.POST.get("file_name")
-        file_algorithm = request.POST.get("file_algorithm")
-        file_group = request.POST.get("file_group")
+        file_name = request.data.get("file_name")
+        file_algorithm = request.data.get("file_algorithm")
+        file_group = request.data.get("file_group")
         file_content = request.FILES.get("file_content")
         group = None
 
         errors = []
 
-        #TODO: missing argument and group handling
         if not file_algorithm or not file_name or not file_content:
             if not file_algorithm:
                 errors.append({
@@ -72,13 +73,29 @@ def file_api(request):
             file=file_content
         )
 
-    #TODO: update file and error handling
-    elif request.method == "PUT":
-        # Update file
-        pass
-    else:
-        # Error
-        pass
+        #TODO: update file and error handling
+        file_id = request.PUT.get("file_id")
+        errors = []
+
+        if not file_id:
+            errors.append({
+                "code": ErrorCode.MISSING_FIELD,
+                "message": f"File ID was not provided."
+            })
+            return JsonResponse({"errors": errors}, status=400)
+        
+        file = File.objects.filter(file_id=file_id).first()
+        if not file:
+            errors.append({
+                "code": ErrorCode.FILE_NOT_FOUND,
+                "message": ErrorCode.FILE_NOT_FOUND.label
+            })
+            return JsonResponse({"errors": errors}, status=400)
+        file_contents = file.file.open('rb')
+        filename = file.file.name.split('/')[-1]
+        response = FileResponse(file_contents, as_attachment=True, filename=filename)
+
+        return response
 
 class FileViewSet(viewsets.ViewSet):
     """

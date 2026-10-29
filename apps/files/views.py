@@ -68,9 +68,8 @@ class FileAPI(APIView):
             }, status=status.HTTP_201_CREATED)
 
 
-    def get(self, request, *args, **kwargs):
+    def get(self, request, file_id=None, *args, **kwargs):
         #TODO: update file and error handling
-        file_id = request.query_params.get("file_id")
         errors = []
 
         if not file_id:
@@ -93,12 +92,27 @@ class FileAPI(APIView):
                 {"errors": errors},
                 status=status.HTTP_404_NOT_FOUND
             )
+        download_param = request.query_params.get('download', 'false').lower()
+        download = download_param in ['true', '1', 'yes']
 
-        file_contents = file.file.open('rb')
-        filename = file.file.name.split('/')[-1]
-        response = FileResponse(file_contents, as_attachment=True, filename=filename)
+        if download:
+            file_contents = file.file.open('rb')
+            filename = file.file.name.split('/')[-1]
+            response = FileResponse(file_contents, as_attachment=True, filename=filename)
 
-        return response
+        #TODO: complete info and add size, etc.
+        file_data = {
+            "file_id": str(file.file_id),
+            "file_name": file.file_name,
+            "file_algorithm": file.file_algorithm,
+            "group": file.group.group_id if file.group else None,
+            "created_at": file.date_created,
+            "user_created": file.user_created
+        }
+        return Response(
+            {"file": file_data},
+            status=status.HTTP_200_OK
+        )
 
 class FileViewSet(viewsets.ViewSet):
     """

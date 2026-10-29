@@ -1,7 +1,8 @@
 from django.shortcuts import render
 from django.http import JsonResponse, FileResponse
 from django.views.decorators.http import require_http_methods, APIView
-from rest_framework import viewsets
+from rest_framework import viewsets, status
+from rest_framweork.response import Response
 from rest_framework.permissions import IsAuthenticated
 
 from models import File, Group
@@ -13,21 +14,7 @@ from .errors import ErrorCode
 class FileAPI(APIView):
     permission_classes = [IsAuthenticated]
 
-    def get(request):
-        file_id = request.data.get('file_id')
-        file_name = request.data.get('file_name')
-
-        if file_id:
-            files_queryset = File.objects.filter(file_id=file_id).all()
-        elif file_name:
-            files_queryset = File.objects.filter(file_name__icontains=file_name).all()
-        else:
-            return JsonResponse({"error": "Either file id or file name needed to perform the search"}, status=400)
-    
-        results = list(files_queryset.values('file_id', 'file_name', 'group'))
-        return JsonResponse({"results": results}, safe=False)
-
-    def post(request):
+    def post(self, request, *args, **kwargs):
         """Handling of updating and adding new files."""
         #TODO: Check http error codes
         # New File
@@ -64,7 +51,10 @@ class FileAPI(APIView):
                 })
         
         if errors:
-            return JsonResponse({"errors": errors}, status=400)
+            return Response(
+                {"errors": errors},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
         file = File.objects.create(
             file_name=file_name,
@@ -72,9 +62,15 @@ class FileAPI(APIView):
             group=group,
             file=file_content
         )
+        return Response({
+            "message": "File created successfully",
+            "file_id": file.file_id
+            }, status=status.HTTP_201_CREATED)
 
+
+    def get(self, request, *args, **kwargs):
         #TODO: update file and error handling
-        file_id = request.PUT.get("file_id")
+        file_id = request.query_params.get("file_id")
         errors = []
 
         if not file_id:
@@ -82,7 +78,10 @@ class FileAPI(APIView):
                 "code": ErrorCode.MISSING_FIELD,
                 "message": f"File ID was not provided."
             })
-            return JsonResponse({"errors": errors}, status=400)
+            return Response(
+                {"errors": errors},
+                status=status.HTTP_400_BAD_REQUEST
+            )
         
         file = File.objects.filter(file_id=file_id).first()
         if not file:
@@ -90,7 +89,11 @@ class FileAPI(APIView):
                 "code": ErrorCode.FILE_NOT_FOUND,
                 "message": ErrorCode.FILE_NOT_FOUND.label
             })
-            return JsonResponse({"errors": errors}, status=400)
+            return Response(
+                {"errors": errors},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
         file_contents = file.file.open('rb')
         filename = file.file.name.split('/')[-1]
         response = FileResponse(file_contents, as_attachment=True, filename=filename)

@@ -6,3 +6,4 @@ class ErrorCode(models.TextChoices):
     FILE_NOT_FOUND = "FILE_NOT_FOUNT", "File ID provided is not in the system."
     INVALID_ALG = "INVALID_ALG", "Algorithm provided is not correct."
     MISSING_FILE_CONTENT = "MISSING_FILE_CONTENT", "File content was not found in the request."
+    FILE_NOT_FOUND = "FILE_NOT_FOUND", "File not registered in database."
